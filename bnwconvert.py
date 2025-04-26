@@ -1,5 +1,7 @@
 import sys
 import os
+import zlib
+import base64
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QPushButton, QLabel, QFileDialog, QTextEdit,
     QLineEdit, QHBoxLayout, QMessageBox
@@ -16,7 +18,6 @@ class ImageTextConverter(QMainWindow):
         self.setWindowTitle("Text Image Converter for People with Slow Internet")
         self.setGeometry(100, 100, 400, 600)
 
-        # Установка иконки окна
         self.setWindowIcon(self.get_icon("ico.ico"))
 
         self.central_widget = QWidget()
@@ -93,12 +94,9 @@ class ImageTextConverter(QMainWindow):
         self.central_widget.setStyleSheet("background-color: #2c2c2c;")
 
     def get_icon(self, icon_name):
-        """Возвращает иконку из ресурсов или текущей директории."""
         if getattr(sys, 'frozen', False):
-            # Если программа скомпилирована
             application_path = sys._MEIPASS
         else:
-            # Если программа запущена в режиме разработки
             application_path = os.path.dirname(os.path.abspath(__file__))
         return QIcon(os.path.join(application_path, icon_name))
 
@@ -126,26 +124,32 @@ class ImageTextConverter(QMainWindow):
             return
 
         height, width = self.pixels.shape
-        text = ""
+        raw_text = ""
         for row in range(height):
             for col in range(width):
                 pixel_value = self.pixels[row, col]
-                text += str(int(pixel_value / 255 * 9))
-            text += "-"
-        text = text.rstrip("-")
-        self.text_output.setText(text)
+                raw_text += str(int(pixel_value / 255 * 9))
+            raw_text += "-"
+
+        raw_text = raw_text.rstrip("-")
+        compressed = zlib.compress(raw_text.encode("utf-8"))
+        encoded = base64.b64encode(compressed).decode("utf-8")
+        self.text_output.setText(encoded)
 
     def copy_text(self):
         clipboard = QApplication.clipboard()
         clipboard.setText(self.text_output.toPlainText())
 
     def decode_to_image(self):
-        text = self.text_input.text()
-        if not text:
+        encoded = self.text_input.text()
+        if not encoded:
             return
 
         try:
-            rows = text.split("-")
+            compressed = base64.b64decode(encoded)
+            raw_text = zlib.decompress(compressed).decode("utf-8")
+
+            rows = raw_text.split("-")
             height = len(rows)
             width = len(rows[0])
 
