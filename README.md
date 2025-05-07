@@ -46,3 +46,5 @@ Built With
 PySide6 : For the graphical user interface.
 Pillow : For image loading, processing, and saving.
 NumPy : For efficient array manipulation.
+
+![image](https://github.com/user-attachments/assets/3c3b79d5-441c-4640-956b-bfbd1e43a5a7)
